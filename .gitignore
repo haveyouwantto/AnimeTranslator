@@ -1,2 +1,63 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Distribution / packaging
+.Python
+env/
+venv/
+.venv/
+*.egg
+*.egg-info
+dist/
+sdist/
+wheels/
+*.whl
+MANIFEST
+
+# PyInstaller
+**/__pyinstaller_temp__/
+**/_MEI*
+*.spec
+
+# Unit test / coverage reports
+htmlcov/
+.tox/
+.coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+*.py,cover
+.pytest_cache/
+.scrapy
+
+# Translations
+*.mo
+*.pot
+
+# Django stuff:
+*.log
+local_settings.py*
+db.sqlite3
+db.sqlite3-*
+
+# Sphinx documentation
+docs/_build/
+
+# Sensible Files
 config.yml
 large-*/
+
+# Jupyter Notebook
+.ipynb_checkpoints
+
+# MyPy cache
+.mypy_cache/
+
+# Other
+*.swp
+*~
+.DS_Store
