@@ -7,7 +7,7 @@ from .base_source import BaseSubtitleSource
 from utils.time_utils import srt_time_to_seconds
 
 class EmbeddedSource(BaseSubtitleSource):
-    def get_subtitle(self, audio_path: str) -> Subtitle:
+    def get_subtitle(self, audio_path: str) -> Optional[Subtitle]:
         """提取视频文件中的内嵌英文字幕"""
         temp_srt = self._extract_embedded_subtitles(audio_path)
         if temp_srt:
@@ -15,7 +15,7 @@ class EmbeddedSource(BaseSubtitleSource):
                 return self._parse_srt(temp_srt)
             finally:
                 os.remove(temp_srt)
-        raise Exception("No embedded English subtitles found")
+        return None
 
     def _extract_embedded_subtitles(self, file_path: str) -> Optional[str]:
         """使用ffmpeg提取内嵌字幕到临时文件"""

@@ -3,8 +3,12 @@ from models.subtitle import Subtitle
 from sources.embedded_source import EmbeddedSource
 from sources.srt_source import SRTSource
 from sources.whisper_source import WhisperSource
+from sources.ass.base import ASSource
+from sources.ass.file import ASSFileSource
+from sources.ass.embedded import ASSEmbeddedSource
 from translators.openai_translator import OpenAITranslator
 from utils.srt_utils import write_srt_file
+from utils.ass_util import write_ass_file
 
 
 import logging
@@ -22,6 +26,8 @@ class SubtitleProcessor:
     
     def _init_sources(self):
         self.sources = [
+            ASSFileSource(),      # 先尝试外挂ASS
+            ASSEmbeddedSource(),  # 然后尝试内嵌ASS
             SRTSource(),
             EmbeddedSource(),
             WhisperSource(
@@ -43,10 +49,13 @@ class SubtitleProcessor:
         )
     
     def process(self, audio_path: str) -> None:
-        subtitle = self._get_subtitle(audio_path)
+        source, subtitle = self._get_subtitle(audio_path)
         logger.info("Found subtitle with %d lines"%len(subtitle.segments))
         translated = self.translator.translate(subtitle)
-        write_srt_file(translated, f"{audio_path}.zh.srt")
+        if isinstance(source, ASSource):
+            write_ass_file(source, translated, f"{audio_path}.zh.ass")
+        else:
+            write_srt_file(translated, f"{audio_path}.zh.srt")
     
     def _get_subtitle(self, audio_path: str) -> Subtitle:
         if self.config['common']['ignore_subtitles']:
@@ -55,7 +64,9 @@ class SubtitleProcessor:
         for source in self.sources:
             try:
                 logger.info("Try source: "+ str(source.__class__.__name__))
-                return source.get_subtitle(audio_path)
+                sub =  source.get_subtitle(audio_path)
+                if sub:
+                    return source, sub
             except Exception:
                 continue
         return self.sources[-1].get_subtitle(audio_path)

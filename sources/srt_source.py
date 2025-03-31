@@ -2,9 +2,10 @@ import os
 from models.subtitle import Subtitle, SubtitleSegment
 from .base_source import BaseSubtitleSource
 from utils.time_utils import srt_time_to_seconds
+from typing import Optional
 
 class SRTSource(BaseSubtitleSource):
-    def get_subtitle(self, audio_path: str) -> Subtitle:
+    def get_subtitle(self, audio_path: str) -> Optional[Subtitle]:
         base_path = os.path.splitext(audio_path)[0]
         possible_paths = [
             f"{base_path}.en.srt",
@@ -15,7 +16,7 @@ class SRTSource(BaseSubtitleSource):
         for path in possible_paths:
             if os.path.exists(path):
                 return self._parse_srt(path)
-        raise FileNotFoundError("No SRT file found")
+        return None
     
     def _parse_srt(self, srt_path: str) -> Subtitle:
         segments = []
