@@ -9,6 +9,7 @@ from sources.ass.embedded import ASSEmbeddedSource
 from translators.openai_translator import OpenAITranslator
 from utils.srt_utils import write_srt_file
 from utils.ass_util import write_ass_file
+import os
 
 
 import logging
@@ -50,6 +51,9 @@ class SubtitleProcessor:
         )
     
     def process(self, audio_path: str) -> None:
+        if not os.path.exists(audio_path):
+            logger.error("File not found")
+            return
         source, subtitle = self._get_subtitle(audio_path)
         logger.info("Found subtitle with %d lines"%len(subtitle.segments))
         translated = self.translator.translate(subtitle)
