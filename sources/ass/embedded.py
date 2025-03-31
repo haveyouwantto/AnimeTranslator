@@ -38,7 +38,6 @@ class ASSEmbeddedSource(ASSource):
     def get_subtitle(self, video_path: str) -> Optional[Subtitle]:
         """提取视频中的英文字幕流"""
         stream_index = self._detect_subtitle_language(video_path)
-        print(stream_index)
         if not stream_index:
             return None
             
@@ -46,12 +45,12 @@ class ASSEmbeddedSource(ASSource):
             with tempfile.NamedTemporaryFile(suffix='.ass', delete=False) as tmp:
                 cmd = [
                     'ffmpeg',
+                    '-loglevel', 'error',
                     '-i', str(video_path),
                     '-map', f'{stream_index}',  # 提取指定字幕流
                     '-c:s', 'ass',
                     '-y', tmp.name
                 ]
-                print(cmd)
                 subprocess.call(cmd)
                 
                 self.original_ass = pysubs2.load(tmp.name)

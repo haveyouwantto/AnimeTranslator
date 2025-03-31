@@ -45,7 +45,8 @@ class SubtitleProcessor:
             prompt=self.config['translation']['prompt'],
             temperature=self.config['openai']['temperature'],
             max_retries=self.config['translation']['max_retries'],
-            retry_delay=self.config['translation']['retry_delay']
+            retry_delay=self.config['translation']['retry_delay'],
+            batch_size=self.config['translation']['batch_size']
         )
     
     def process(self, audio_path: str) -> None:
@@ -54,8 +55,10 @@ class SubtitleProcessor:
         translated = self.translator.translate(subtitle)
         if isinstance(source, ASSource):
             write_ass_file(source, translated, f"{audio_path}.zh.ass")
+            logger.info("ASS file successfully written")
         else:
             write_srt_file(translated, f"{audio_path}.zh.srt")
+            logger.info("SRT file successfully written")
     
     def _get_subtitle(self, audio_path: str) -> Subtitle:
         if self.config['common']['ignore_subtitles']:

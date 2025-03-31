@@ -4,6 +4,7 @@ from typing import Tuple
 from models.subtitle import Subtitle, SubtitleSegment
 from .base_translator import BaseTranslator
 from utils.text_format import segments_to_text, text_to_segments
+import traceback
 
 import logging
 logger = logging.getLogger(__name__)
@@ -41,6 +42,7 @@ class OpenAITranslator(BaseTranslator):
             translated_segments.extend(result)
             time.sleep(self.retry_delay)
         
+        logger.info("Translation completed")
         return Subtitle(translated_segments)
     
     def _translate_batch(self, batch: list, last_line: dict, 
@@ -64,10 +66,12 @@ class OpenAITranslator(BaseTranslator):
                 # 解析回复并重新关联时间信息
                 translated_text = response["choices"][0]["message"]["content"]
                 translated_segments = text_to_segments(translated_text, batch)
-                logger.info(translated_text)
+                logger.info("Translated line %d successfully" % batch[-1].line_number)
                 
                 return translated_segments, line, response["choices"][0]["message"]
-            except Exception:
+            except Exception as e:
                 retries += 1
+                traceback.print_exc()
+                logger.error("Failed to translate batch, retrying...")
                 time.sleep(self.retry_delay)
         raise Exception("Translation failed after retries")
