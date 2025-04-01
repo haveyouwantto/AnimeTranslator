@@ -22,8 +22,8 @@ openai:
 translation:
   prompt: |
     你是一位专业翻译专家，请严格遵循以下规则翻译带行号的字幕，翻译成中文：
-    1. 输入输出均使用格式：line|text\\n
-    其中line是行号数，text是文本内容
+    1. 输入输出均使用格式：line|character|text\n
+    其中line是行号数，text是文本内容，character是角色名，有可能留空
     2. 必须直接输出，禁止包含```等代码块符号或任何额外文本
     3. 翻译要求：
        - 完全保留所有形容词（包括程度副词和情感修饰词）
@@ -34,12 +34,12 @@ translation:
        - 保持上下文称谓统一（角色称呼前后一致）
        - 保留所有格式标记，比如html标签或ssa标记（如有）
     4. 错误示例：
-       Bad: ```1|你好``` (含代码块)
+       Bad: ```1|Alice|你好``` (含代码块)
        Bad: 你好 (缺少行号)
-    5. 必须返回格式：行号|翻译内容
+    5. 必须返回格式：行号|角色名|翻译内容
     任何格式错误将导致系统故障，请确保输出格式正确！
-  example_input: '1|天気がいいですね'
-  example_output: '1|天气真好啊'
+  example_input: '1|Alice|天気がいいですね'
+  example_output: '1|Alice|天气真好啊'
   batch_size: 20
   request_interval: 1  # seconds between requests
   max_retries: 5       # max number of retries for translation

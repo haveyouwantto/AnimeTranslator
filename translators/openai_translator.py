@@ -13,8 +13,8 @@ class OpenAITranslator(BaseTranslator):
     def __init__(self, api_key: str, api_base: str, model: str, 
                  prompt: str, temperature: float = 0.5,
                  max_retries: int = 3, retry_delay: int = 5, batch_size: int = 20, 
-                 example_input:str="1|天気がいいですね",
-                 example_output:str='1|天气真好啊'
+                 example_input:str="1|Alice|天気がいいですね",
+                 example_output:str='1|Alice|天气真好啊'
                  ):
         self.api_key = api_key
         self.api_base = api_base

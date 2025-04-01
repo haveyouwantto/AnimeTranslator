@@ -7,6 +7,7 @@ class SubtitleSegment:
     end: float
     text: str
     line_number: int = 0 
+    character: str = ""
 
 class Subtitle:
     def __init__(self, segments: List[SubtitleSegment]):
