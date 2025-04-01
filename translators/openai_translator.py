@@ -66,12 +66,20 @@ class OpenAITranslator(BaseTranslator):
                 # 解析回复并重新关联时间信息
                 translated_text = response["choices"][0]["message"]["content"]
                 translated_segments = text_to_segments(translated_text, batch)
-                logger.info("Translated line %d successfully" % batch[-1].line_number)
                 
+                # 检查翻译后的分段数量是否匹配
+                if len(translated_segments) != len(batch):
+                    error_msg = f"Translated segments count mismatch: expected {len(batch)}, got {len(translated_segments)}"
+                    logger.error(error_msg)
+                    raise ValueError(error_msg)
+                
+                logger.info(f"Translated line {batch[-1].line_number} successfully")
                 return translated_segments, line, response["choices"][0]["message"]
+            
             except Exception as e:
                 retries += 1
-                traceback.print_exc()
-                logger.error("Failed to translate batch, retrying...")
-                time.sleep(self.retry_delay)
-        raise Exception("Translation failed after retries")
+                logger.warning(f"Retry {retries}/{self.max_retries} due to error: {str(e)}")
+                if retries >= self.max_retries:
+                    logger.error("Max retries exceeded, raising exception")
+                    raise Exception("Translation failed after retries") from e
+                time.sleep(self.retry_delay * retries)  # 指数退避
