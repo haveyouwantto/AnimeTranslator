@@ -47,7 +47,8 @@ class SubtitleProcessor:
             temperature=self.config['openai']['temperature'],
             max_retries=self.config['translation']['max_retries'],
             retry_delay=self.config['translation']['retry_delay'],
-            batch_size=self.config['translation']['batch_size']
+            batch_size=self.config['translation']['batch_size'],
+            history_size=self.config['translation']['history_size']
         )
     
     def process(self, audio_path: str) -> None:

@@ -18,6 +18,7 @@ openai:
   api_base: "https://api.openai.com/v1"
   model: "gpt-4"
   temperature: 0.3
+  history_size: 50
 
 translation:
   prompt: |
