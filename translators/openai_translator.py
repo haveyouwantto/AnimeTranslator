@@ -10,13 +10,22 @@ import logging
 
 logger = logging.getLogger(__name__)
 
+
 class OpenAITranslator(BaseTranslator):
-    def __init__(self, api_key: str, api_base: str, model: str, 
-                 prompt: str, temperature: float = 0.5,
-                 max_retries: int = 3, retry_delay: int = 5, batch_size: int = 20, 
-                 history_size: int = 50,
-                 example_input: str = "1|Alice|天気がいいですね",
-                 example_output: str = "1|Alice|天气真好啊"):
+    def __init__(
+        self,
+        api_key: str,
+        api_base: str,
+        model: str,
+        prompt: str,
+        temperature: float = 0.5,
+        max_retries: int = 3,
+        retry_delay: int = 5,
+        batch_size: int = 20,
+        history_size: int = 50,
+        example_input: str = "1|Alice|天気がいいですね",
+        example_output: str = "1|Alice|天气真好啊",
+    ):
         self.api_key = api_key
         self.api_base = api_base
         self.model = model
@@ -25,45 +34,53 @@ class OpenAITranslator(BaseTranslator):
         self.max_retries = max_retries
         self.retry_delay = retry_delay
         self.batch_size = batch_size
-        
+
         # 如果 history_size 非整数，则向上取整
         self.history_size = math.ceil(history_size)
-        
+
         self.example_input = example_input
         self.example_output = example_output
         openai.api_key = api_key
         openai.api_base = api_base
-        
-        # 初始化对话历史，保存原文和翻译对（以行单位）
-        self.conversation_history = [{
-            "user": {"role": "user", "content": self.example_input},
-            "assistant": {"role": "assistant", "content": self.example_output}
-        }]
+
 
     def translate(self, subtitle: Subtitle) -> Subtitle:
         translated_segments = []
+
+        # 初始化对话历史，保存原文和翻译对（以行单位）
+        self.orig_segments = []
+        self.trans_segments = []
+
         # 按照 batch_size 进行批量翻译
         for i in range(0, len(subtitle.segments), self.batch_size):
-            batch = subtitle.segments[i:i+self.batch_size]
+            batch = subtitle.segments[i : i + self.batch_size]
             try:
                 result = self._translate_batch(batch)
             except Exception as e:
-                logger.warning(f"Batch translation failed after retries, switching to line-by-line translation. Error: {str(e)}")
+                logger.warning(
+                    f"Batch translation failed after retries, switching to line-by-line translation. Error: {str(e)}"
+                )
                 result = self._translate_line_by_line(batch)
             translated_segments.extend(result)
             time.sleep(self.retry_delay)
-        
+
         logger.info("Translation completed")
         return Subtitle(translated_segments)
-    
+
     def _build_messages(self, user_message: dict) -> List[dict]:
         """
         构建对话消息，将系统提示、历史对话（按行单位，每一行包含user和assistant消息）以及当前用户消息组合起来。
         """
         messages = [{"role": "system", "content": self.prompt}]
-        for record in self.conversation_history:
-            messages.append(record["user"])
-            messages.append(record["assistant"])
+
+        last_orig = self.orig_segments[-self.history_size :]
+        last_trans = self.trans_segments[-self.history_size :]
+
+        if len(last_orig) > 0:
+            messages.append([{"role": "user", "content": segments_to_text(last_orig)}])
+            messages.append(
+                [{"role": "assistant", "content": segments_to_text(last_trans)}]
+            )
         messages.append(user_message)
         return messages
 
@@ -75,44 +92,35 @@ class OpenAITranslator(BaseTranslator):
                 text_content = segments_to_text(batch)
                 user_message = {"role": "user", "content": text_content}
                 messages = self._build_messages(user_message)
-                
+
                 response = openai.ChatCompletion.create(
-                    model=self.model,
-                    messages=messages,
-                    temperature=self.temperature
+                    model=self.model, messages=messages, temperature=self.temperature
                 )
-                
+
                 translated_text = response["choices"][0]["message"]["content"]
                 translated_segments = text_to_segments(translated_text, batch)
-                
+
                 # 检查翻译后的分段数量是否匹配
                 if len(translated_segments) != len(batch):
                     error_msg = f"Translated segments count mismatch: expected {len(batch)}, got {len(translated_segments)}"
                     logger.error(error_msg)
                     raise ValueError(error_msg)
-                
-                logger.info(f"Translated batch ending at line {batch[-1].line_number} successfully")
-                
+
+                logger.info(
+                    f"Translated batch ending at line {batch[-1].line_number} successfully"
+                )
+
                 # 更新对话历史，记录当前批次的对话对（按行逐条添加）
-                new_records = []
-                # 假设 segments_to_text 和 text_to_segments 保持行的对应关系
-                original_lines = text_content.splitlines()
-                translated_lines = translated_text.splitlines()
-                for orig, trans in zip(original_lines, translated_lines):
-                    new_records.append({
-                        "user": {"role": "user", "content": orig},
-                        "assistant": {"role": "assistant", "content": trans}
-                    })
-                self.conversation_history.extend(new_records)
-                # 保留最近 history_size 行（单位为行对）
-                if len(self.conversation_history) > self.history_size:
-                    self.conversation_history = self.conversation_history[-self.history_size:]
-                
+                self.orig_segments.extend(batch)
+                self.trans_segments.extend(translated_segments)
+
                 return translated_segments
-            
+
             except Exception as e:
                 retries += 1
-                logger.warning(f"Retry {retries}/{self.max_retries} for batch ending at line {batch[-1].line_number} due to error: {str(e)}")
+                logger.warning(
+                    f"Retry {retries}/{self.max_retries} for batch ending at line {batch[-1].line_number} due to error: {str(e)}"
+                )
                 if retries >= self.max_retries:
                     logger.error("Max retries exceeded for batch translation")
                     raise Exception("Translation failed after retries") from e
@@ -131,40 +139,42 @@ class OpenAITranslator(BaseTranslator):
                     text_content = segments_to_text([segment])
                     user_message = {"role": "user", "content": text_content}
                     messages = self._build_messages(user_message)
-                    
+
                     response = openai.ChatCompletion.create(
                         model=self.model,
                         messages=messages,
-                        temperature=self.temperature
+                        temperature=self.temperature,
                     )
-                    
+
                     translated_text = response["choices"][0]["message"]["content"]
                     translated_segment = text_to_segments(translated_text, [segment])
-                    
+
                     if len(translated_segment) != 1:
                         error_msg = f"Translated single segment count mismatch: expected 1, got {len(translated_segment)}"
                         logger.error(error_msg)
                         raise ValueError(error_msg)
-                    
-                    logger.info(f"Translated line {segment.line_number} successfully in line-by-line mode")
-                    
+
+                    logger.info(
+                        f"Translated line {segment.line_number} successfully in line-by-line mode"
+                    )
+
                     # 更新对话历史
-                    orig_line = text_content.strip()
-                    trans_line = translated_text.strip()
-                    self.conversation_history.append({
-                        "user": {"role": "user", "content": orig_line},
-                        "assistant": {"role": "assistant", "content": trans_line}
-                    })
-                    if len(self.conversation_history) > self.history_size:
-                        self.conversation_history = self.conversation_history[-self.history_size:]
-                    
+                    self.orig_segments.append(segment)
+                    self.trans_segments.append(translated_segment)
+
                     translated_segments.extend(translated_segment)
                     break  # 成功翻译当前行，退出重试循环
                 except Exception as e:
                     retries += 1
-                    logger.warning(f"Retry {retries}/{self.max_retries} for line {segment.line_number} due to error: {str(e)}")
+                    logger.warning(
+                        f"Retry {retries}/{self.max_retries} for line {segment.line_number} due to error: {str(e)}"
+                    )
                     if retries >= self.max_retries:
-                        logger.error(f"Max retries exceeded for line {segment.line_number}")
-                        raise Exception("Line-by-line translation failed after retries") from e
+                        logger.error(
+                            f"Max retries exceeded for line {segment.line_number}"
+                        )
+                        raise Exception(
+                            "Line-by-line translation failed after retries"
+                        ) from e
                     time.sleep(self.retry_delay * retries)  # 指数退避
         return translated_segments
