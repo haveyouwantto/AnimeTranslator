@@ -30,13 +30,15 @@ class SubtitleProcessor:
             ASSFileSource(),      # 先尝试外挂ASS
             ASSEmbeddedSource(),  # 然后尝试内嵌ASS
             SRTSource(),
-            EmbeddedSource(),
-            WhisperSource(
+            EmbeddedSource()
+        ]
+
+        if self.config['whisper']['enable']:
+            self.sources.append(WhisperSource(
                 model_size=self.config['whisper']['model_size'],
                 language=self.config['whisper']['language'],
                 beam_size=self.config['whisper']['beam_size']
-            )
-        ]
+            ))
     
     def _init_translator(self):
         self.translator = OpenAITranslator(

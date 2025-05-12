@@ -21,14 +21,15 @@ def load_config(config_path='config.yml'):
         sys.exit(1)
 
 def main():
-    if len(sys.argv) != 2:
-        print("Usage: python main.py audio_file.mp3")
+    if len(sys.argv) <= 1:
+        print("Usage: python main.py audio_file.mp3 ...")
         sys.exit(1)
     
     
     config = load_config()
     processor = SubtitleProcessor(config)
-    processor.process(sys.argv[1])
+    for audio_file in sys.argv[1:]:
+        processor.process(audio_file)
 
 if __name__ == "__main__":
     main()
