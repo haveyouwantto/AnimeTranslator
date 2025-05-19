@@ -3,6 +3,7 @@ import yaml
 from processor import SubtitleProcessor
 from pathlib import Path
 from config import create_default_config
+import glob
 
 def load_config(config_path='config.yml'):
     """加载配置文件，不存在则创建"""
@@ -28,8 +29,9 @@ def main():
     
     config = load_config()
     processor = SubtitleProcessor(config)
-    for audio_file in sys.argv[1:]:
-        processor.process(audio_file)
+    for patt in sys.argv[1:]:
+    	for audio_file in glob.glob(patt):
+            processor.process(audio_file)
 
 if __name__ == "__main__":
     main()

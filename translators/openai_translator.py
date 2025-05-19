@@ -4,7 +4,7 @@ import math
 from typing import Tuple, List
 from models.subtitle import Subtitle, SubtitleSegment
 from .base_translator import BaseTranslator
-from utils.text_format import segments_to_text, text_to_segments
+from utils.text_format import segments_to_text, text_to_segments, create_segment
 import traceback
 import logging
 
@@ -23,8 +23,8 @@ class OpenAITranslator(BaseTranslator):
         retry_delay: int = 5,
         batch_size: int = 20,
         history_size: int = 50,
-        example_input: str = "1|Alice|天気がいいですね",
-        example_output: str = "1|Alice|天气真好啊",
+        example_input: str = "0|Alice|天気がいいですね",
+        example_output: str = "0|Alice|天气真好啊",
     ):
         self.api_key = api_key
         self.api_base = api_base
@@ -44,12 +44,25 @@ class OpenAITranslator(BaseTranslator):
         openai.api_base = api_base
 
 
+
     def translate(self, subtitle: Subtitle) -> Subtitle:
         translated_segments = []
 
         # 初始化对话历史，保存原文和翻译对（以行单位）
         self.orig_segments = []
         self.trans_segments = []
+        
+        # 插入示例输入输出到segments
+        split_input = self.example_input.split("|")
+        split_output = self.example_output.split("|")
+        example_input_segment = create_segment(
+            split_input[0], split_input[2], split_input[1]
+        )
+        example_output_segment = create_segment(
+            split_output[0], split_output[2], split_output[1]
+        )
+        self.orig_segments.append(example_input_segment)
+        self.trans_segments.append(example_output_segment)
 
         # 按照 batch_size 进行批量翻译
         for i in range(0, len(subtitle.segments), self.batch_size):

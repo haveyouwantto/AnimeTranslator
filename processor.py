@@ -50,13 +50,16 @@ class SubtitleProcessor:
             max_retries=self.config['translation']['max_retries'],
             retry_delay=self.config['translation']['retry_delay'],
             batch_size=self.config['translation']['batch_size'],
-            history_size=self.config['translation']['history_size']
+            history_size=self.config['translation']['history_size'],
+            example_input=self.config['translation']['example_input'],
+            example_output=self.config['translation']['example_output']
         )
     
     def process(self, audio_path: str) -> None:
         if not os.path.exists(audio_path):
             logger.error("File not found")
             return
+        logger.info("Processing file: "+ audio_path)    
         source, subtitle = self._get_subtitle(audio_path)
         logger.info("Found subtitle with %d lines"%len(subtitle.segments))
         translated = self.translator.translate(subtitle)
