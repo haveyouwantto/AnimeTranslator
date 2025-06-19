@@ -80,7 +80,7 @@ class OpenAITranslator(BaseTranslator):
         logger.info("Translation completed")
         return Subtitle(translated_segments)
 
-    def _build_messages(self, user_message: dict) -> List[dict]:
+    def _build_messages(self, incoming_message: List[SubtitleSegment]) -> List[dict]:
         """
         构建对话消息，将系统提示、历史对话（按行单位，每一行包含user和assistant消息）以及当前用户消息组合起来。
         """
@@ -94,17 +94,15 @@ class OpenAITranslator(BaseTranslator):
             messages.append(
                 [{"role": "assistant", "content": segments_to_text(last_trans)}]
             )
-        messages.append(user_message)
+        messages.append([{"role": "user", "content": segments_to_text(incoming_message)}])
         return messages
 
-    def _translate_batch(self, batch: list) -> Tuple[list]:
+    def _translate_batch(self, batch: List[SubtitleSegment]) -> Tuple[list]:
         retries = 0
         while retries < self.max_retries:
             try:
                 # 只发送行号和文本
-                text_content = segments_to_text(batch)
-                user_message = {"role": "user", "content": text_content}
-                messages = self._build_messages(user_message)
+                messages = self._build_messages(batch)
 
                 response = openai.ChatCompletion.create(
                     model=self.model, messages=messages, temperature=self.temperature
@@ -137,7 +135,7 @@ class OpenAITranslator(BaseTranslator):
                 if retries >= self.max_retries:
                     logger.error("Max retries exceeded for batch translation")
                     raise Exception("Translation failed after retries") from e
-                time.sleep(self.retry_delay * retries)  # 指数退避
+                time.sleep(self.retry_delay * (2**retries))  # 指数退避
 
     def _translate_line_by_line(self, batch: list) -> list:
         """
@@ -149,9 +147,8 @@ class OpenAITranslator(BaseTranslator):
             while retries < self.max_retries:
                 try:
                     # 每次只翻译一行
-                    text_content = segments_to_text([segment])
-                    user_message = {"role": "user", "content": text_content}
-                    messages = self._build_messages(user_message)
+                    segment_list = [segment]
+                    messages = self._build_messages(segment_list)
 
                     response = openai.ChatCompletion.create(
                         model=self.model,
@@ -160,7 +157,7 @@ class OpenAITranslator(BaseTranslator):
                     )
 
                     translated_text = response["choices"][0]["message"]["content"]
-                    translated_segment = text_to_segments(translated_text, [segment])
+                    translated_segment = text_to_segments(translated_text, segment_list)
 
                     if len(translated_segment) != 1:
                         error_msg = f"Translated single segment count mismatch: expected 1, got {len(translated_segment)}"
@@ -173,7 +170,8 @@ class OpenAITranslator(BaseTranslator):
 
                     # 更新对话历史
                     self.orig_segments.append(segment)
-                    self.trans_segments.append(translated_segment)
+                    print(translated_segment)
+                    self.trans_segments.extend(translated_segment)
 
                     translated_segments.extend(translated_segment)
                     break  # 成功翻译当前行，退出重试循环
@@ -189,5 +187,5 @@ class OpenAITranslator(BaseTranslator):
                         raise Exception(
                             "Line-by-line translation failed after retries"
                         ) from e
-                    time.sleep(self.retry_delay * retries)  # 指数退避
+                    time.sleep(self.retry_delay * (2**retries))  # 指数退避
         return translated_segments

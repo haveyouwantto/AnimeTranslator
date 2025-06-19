@@ -60,7 +60,11 @@ class SubtitleProcessor:
             logger.error("File not found")
             return
         logger.info("Processing file: "+ audio_path)    
-        source, subtitle = self._get_subtitle(audio_path)
+        result = self._get_subtitle(audio_path)
+        if not result:
+            logger.error("No subtitle found for %s", audio_path)
+            return
+        source, subtitle = result
         logger.info("Found subtitle with %d lines"%len(subtitle.segments))
         translated = self.translator.translate(subtitle)
         if isinstance(source, ASSource):

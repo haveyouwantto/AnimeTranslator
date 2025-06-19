@@ -60,7 +60,7 @@ class ASSEmbeddedSource(ASSource):
                         start=event.start / 1000,  # 毫秒转秒
                         end=event.end / 1000,
                         text=event.text,
-                        character=event.name
+                        character=event.name if len(event.name) > 0 else "default"
                     )
                     for i, event in enumerate(self.original_ass.events)
                     if event.type == "Dialogue"
