@@ -1,4 +1,5 @@
 import openai
+from openai import OpenAI
 import time
 import math
 from typing import Tuple, List
@@ -40,8 +41,7 @@ class OpenAITranslator(BaseTranslator):
 
         self.example_input = example_input
         self.example_output = example_output
-        openai.api_key = api_key
-        openai.api_base = api_base
+        self.client = OpenAI(base_url=api_base, api_key=api_key)
 
 
 
@@ -51,7 +51,7 @@ class OpenAITranslator(BaseTranslator):
         # 初始化对话历史，保存原文和翻译对（以行单位）
         self.orig_segments = []
         self.trans_segments = []
-        
+
         # 插入示例输入输出到segments
         split_input = self.example_input.split("|")
         split_output = self.example_output.split("|")
@@ -104,11 +104,9 @@ class OpenAITranslator(BaseTranslator):
                 # 只发送行号和文本
                 messages = self._build_messages(batch)
 
-                response = openai.ChatCompletion.create(
-                    model=self.model, messages=messages, temperature=self.temperature
-                )
+                response = self.client.chat.completions.create(model=self.model, messages=messages, temperature=self.temperature)
 
-                translated_text = response["choices"][0]["message"]["content"]
+                translated_text = response.choices[0].message.content
                 translated_segments = text_to_segments(translated_text, batch)
 
                 # 检查翻译后的分段数量是否匹配
@@ -150,13 +148,11 @@ class OpenAITranslator(BaseTranslator):
                     segment_list = [segment]
                     messages = self._build_messages(segment_list)
 
-                    response = openai.ChatCompletion.create(
-                        model=self.model,
-                        messages=messages,
-                        temperature=self.temperature,
-                    )
+                    response = self.client.chat.completions.create(model=self.model,
+                    messages=messages,
+                    temperature=self.temperature)
 
-                    translated_text = response["choices"][0]["message"]["content"]
+                    translated_text = response.choices[0].message.content
                     translated_segment = text_to_segments(translated_text, segment_list)
 
                     if len(translated_segment) != 1:
