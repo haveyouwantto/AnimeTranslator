@@ -6,6 +6,7 @@ from sources.whisper_source import WhisperSource
 from sources.ass.base import ASSource
 from sources.ass.file import ASSFileSource
 from sources.ass.embedded import ASSEmbeddedSource
+from sources.ass.whisper_word import WhisperWord
 from translators.openai_translator import OpenAITranslator
 from utils.srt_utils import write_srt_file
 from utils.ass_util import write_ass_file
@@ -34,7 +35,7 @@ class SubtitleProcessor:
         ]
 
         if self.config['whisper']['enable']:
-            self.sources.append(WhisperSource(
+            self.sources.append(WhisperWord(
                 model_size=self.config['whisper']['model_size'],
                 language=self.config['whisper']['language'],
                 beam_size=self.config['whisper']['beam_size']

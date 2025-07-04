@@ -33,7 +33,7 @@ class WhisperSource(BaseSubtitleSource):
                 end=segment.end,
                 text=segment.text,
                 line_number=i+1,  # Whisper生成的行号从1开始
-                character="default"
+                character="Transcription"
             ))
             if i % 10 == 0:
                 logger.info(f'Transcribe at {segment.start}, content: {segment.text}')

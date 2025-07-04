@@ -34,7 +34,6 @@ def write_ass_file(source: ASSource, subtitle: Subtitle, output_path: str) -> bo
             event_index += 1
             if event_index in translation_map:
                 event.text = translation_map[event_index]
-    
     try:
         translated_ass.save(output_path)
         return True
