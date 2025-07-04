@@ -73,5 +73,5 @@ class WhisperWord(ASSource):
             self.original_ass.events.append(event)
             if i % 10 == 0:
                 logger.info(f'Transcribe at {segment.start}, content: {segment.text}')
-        self.original_ass.save(video_path+".ass")
+        self.original_ass.save(video_path+".original."+self.language+".ass")
         return Subtitle(subtitle_segments)
