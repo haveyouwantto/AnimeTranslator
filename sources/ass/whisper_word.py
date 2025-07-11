@@ -32,8 +32,22 @@ class WhisperWord(ASSource):
         style.shadow = 0
         style.bold = False
         style.italic = False
+        style.marginv = 24
         style.alignment = pysubs2.Alignment.BOTTOM_CENTER
         self.original_ass.styles[style.name] = style
+
+        small_style = pysubs2.SSAStyle()
+        small_style.name = "Karaoke-Small"
+        small_style.fontsize = 10
+        small_style.primarycolor = pysubs2.Color(230, 40, 150, 0)      
+        small_style.secondarycolor = pysubs2.Color(255, 255, 255, 0) 
+        small_style.outline = 0.8
+        small_style.shadow = 0
+        small_style.bold = False
+        small_style.italic = False
+        small_style.marginv = 265
+        small_style.alignment = pysubs2.Alignment.TOP_CENTER
+        self.original_ass.styles[small_style.name] = small_style
 
         segments, _ = self.model.transcribe(
             video_path,
@@ -43,6 +57,7 @@ class WhisperWord(ASSource):
         )
 
         subtitle_segments = []
+        self.original_sub = []
 
 
         for i, segment in enumerate(segments):
@@ -70,8 +85,15 @@ class WhisperWord(ASSource):
             event = pysubs2.SSAEvent(
                 start=segment.start*1000, 
                 end=segment.end*1000, text=line, style="Karaoke")
+            event2 = pysubs2.SSAEvent(
+                start=segment.start*1000, 
+                end=segment.end*1000, text=line, style="Karaoke-Small")
             self.original_ass.events.append(event)
+            self.original_sub.append(event2)
             if i % 10 == 0:
                 logger.info(f'Transcribe at {segment.start}, content: {segment.text}')
         self.original_ass.save(video_path+".original."+self.language+".ass")
         return Subtitle(subtitle_segments)
+    
+    def post_processing(self):
+        self.original_ass.extend(self.original_sub)

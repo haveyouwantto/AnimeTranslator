@@ -36,3 +36,6 @@ class ASSource(BaseSubtitleSource):
             for i, event in enumerate(self.original_ass.events)
             if event.type == "Dialogue"
         ]
+    
+    def post_processing(self):
+        pass

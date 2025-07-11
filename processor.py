@@ -69,6 +69,7 @@ class SubtitleProcessor:
         logger.info("Found subtitle with %d lines"%len(subtitle.segments))
         translated = self.translator.translate(subtitle)
         if isinstance(source, ASSource):
+            source.post_processing()
             write_ass_file(source, translated, f"{audio_path}.zh.ass")
             logger.info("ASS file successfully written")
         else:
