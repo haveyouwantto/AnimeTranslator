@@ -78,7 +78,7 @@ class SubtitleProcessor:
     
     def _get_subtitle(self, audio_path: str) -> Subtitle:
         if self.config['common']['ignore_subtitles']:
-            return self.sources[-1].get_subtitle(audio_path)
+            return self.sources[-1], self.sources[-1].get_subtitle(audio_path)
         
         for source in self.sources:
             try:
@@ -88,4 +88,4 @@ class SubtitleProcessor:
                     return source, sub
             except Exception:
                 continue
-        return self.sources[-1].get_subtitle(audio_path)
+        return self.sources[-1], self.sources[-1].get_subtitle(audio_path)
