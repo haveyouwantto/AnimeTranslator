@@ -4,8 +4,11 @@ from processor import SubtitleProcessor
 from pathlib import Path
 from config import create_default_config
 import glob
+import os
 
-def load_config(config_path='config.yml'):
+default_config = os.path.join( os.path.dirname(os.path.abspath(__file__)), "config.yml")
+
+def load_config(config_path=default_config):
     """加载配置文件，不存在则创建"""
     if not Path(config_path).exists():
         print("未找到配置文件")
