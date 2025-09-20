@@ -21,12 +21,12 @@ class WhisperWord(ASSource):
     def get_subtitle(self, video_path):
         self._load_model()
         self.original_ass = pysubs2.SSAFile()
-        # 添加一个样式，名字叫“Karaoke”
+        # 添加一个样式
         style = pysubs2.SSAStyle()
-        style.name = "Karaoke"
+        style.name = "Default"
         style.fontname = "Arial"
         style.fontsize = 16
-        style.primarycolor = pysubs2.Color(230, 40, 150, 0)      
+        style.primarycolor = pysubs2.Color(255, 255, 255, 0)      
         style.secondarycolor = pysubs2.Color(255, 255, 255, 0) 
         style.outline = 0.8
         style.shadow = 0
@@ -52,7 +52,7 @@ class WhisperWord(ASSource):
         segments, _ = self.model.transcribe(
             video_path,
             beam_size=self.beam_size,
-            language=self.language,
+            # language=self.language,
             word_timestamps=True
         )
 
@@ -78,13 +78,13 @@ class WhisperWord(ASSource):
             subtitle_segments.append(SubtitleSegment(
                 start=segment.start,
                 end=segment.end,
-                text=line,
+                text=segment.text,
                 line_number=i+1,  # Whisper生成的行号从1开始
                 character="Transcription"
             ))
             event = pysubs2.SSAEvent(
                 start=segment.start*1000, 
-                end=segment.end*1000, text=line, style="Karaoke")
+                end=segment.end*1000, text=segment.text, style="Default")
             event2 = pysubs2.SSAEvent(
                 start=segment.start*1000, 
                 end=segment.end*1000, text=line, style="Karaoke-Small")
