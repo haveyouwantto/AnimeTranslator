@@ -20,11 +20,21 @@ class WhisperSource(BaseSubtitleSource):
     
     def get_subtitle(self, audio_path: str) -> Subtitle:
         self._load_model()
-        segments, _ = self.model.transcribe(
-            audio_path,
-            beam_size=self.beam_size,
-            language=self.language
-        )
+        
+        if self.language == 'auto':
+            segments, _ = self.model.transcribe(
+                audio_path,
+                beam_size=self.beam_size,
+                word_timestamps=True
+            )
+        else:
+            segments, _ = self.model.transcribe(
+                audio_path,
+                language=self.language,
+                beam_size=self.beam_size,
+                word_timestamps=True
+            )
+
         subtitle_segments = []
 
         for i, segment in enumerate(segments):

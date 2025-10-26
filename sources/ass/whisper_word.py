@@ -49,12 +49,19 @@ class WhisperWord(ASSource):
         small_style.alignment = pysubs2.Alignment.TOP_CENTER
         self.original_ass.styles[small_style.name] = small_style
 
-        segments, _ = self.model.transcribe(
-            video_path,
-            beam_size=self.beam_size,
-            # language=self.language,
-            word_timestamps=True
-        )
+        if self.language == 'auto':
+            segments, _ = self.model.transcribe(
+                video_path,
+                beam_size=self.beam_size,
+                word_timestamps=True
+            )
+        else:
+            segments, _ = self.model.transcribe(
+                video_path,
+                language=self.language,
+                beam_size=self.beam_size,
+                word_timestamps=True
+            )
 
         subtitle_segments = []
         self.original_sub = []
