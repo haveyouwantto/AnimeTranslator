@@ -10,6 +10,7 @@ from sources.ass.whisper_word import WhisperWord
 from translators.openai_translator import OpenAITranslator
 from utils.srt_utils import write_srt_file
 from utils.ass_util import write_ass_file
+from utils.lrc_utils import write_lrc_file
 import os
 
 
@@ -68,13 +69,17 @@ class SubtitleProcessor:
         source, subtitle = result
         logger.info("Found subtitle with %d lines"%len(subtitle.segments))
         translated = self.translator.translate(subtitle)
-        if isinstance(source, ASSource):
-            source.post_processing()
-            write_ass_file(source, translated, f"{audio_path}.zh.ass")
-            logger.info("ASS file successfully written")
+        if self.config['output']['lrc_format']:
+            write_lrc_file(translated, f"{audio_path}.zh.lrc")
+            logger.info("LRC file successfully written")
         else:
-            write_srt_file(translated, f"{audio_path}.zh.srt")
-            logger.info("SRT file successfully written")
+            if isinstance(source, ASSource):
+                source.post_processing()
+                write_ass_file(source, translated, f"{audio_path}.zh.ass")
+                logger.info("ASS file successfully written")
+            else:
+                write_srt_file(translated, f"{audio_path}.zh.srt")
+                logger.info("SRT file successfully written")
     
     def _get_subtitle(self, audio_path: str) -> Subtitle:
         if self.config['common']['ignore_subtitles']:

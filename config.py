@@ -45,6 +45,9 @@ translation:
   request_interval: 1  # seconds between requests
   max_retries: 5       # max number of retries for translation
   retry_delay: 5       # seconds to wait before retrying translation
+
+output:
+  lrc_format: False  # If true, output LRC files; if false, output SRT/ASS files
 """
 
 def create_default_config(config_path='config.yml'):
