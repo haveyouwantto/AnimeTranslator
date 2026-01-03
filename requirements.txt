@@ -1,4 +1,4 @@
-openai==0.28
+openai==1.93
 tqdm
 torch
 faster-whisper
