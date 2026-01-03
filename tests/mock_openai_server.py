@@ -93,7 +93,7 @@ async def chat_completions(request: ChatCompletionRequest):
             
         line_num, character, text = parts
         # 返回格式: line_number|character|[line_number] text
-        translated_lines.append(f"{line_num}|{character}|[{line_num}] {text}")
+        translated_lines.append(f"{line_num}|{character}|{line_num}-{text}")
 
     response_content = "\n".join(translated_lines)
     
