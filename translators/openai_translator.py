@@ -90,11 +90,11 @@ class OpenAITranslator(BaseTranslator):
         last_trans = self.trans_segments[-self.history_size :]
 
         if len(last_orig) > 0:
-            messages.append([{"role": "user", "content": segments_to_text(last_orig)}])
+            messages.append({"role": "user", "content": segments_to_text(last_orig)})
             messages.append(
-                [{"role": "assistant", "content": segments_to_text(last_trans)}]
+                {"role": "assistant", "content": segments_to_text(last_trans)}
             )
-        messages.append([{"role": "user", "content": segments_to_text(incoming_message)}])
+        messages.append({"role": "user", "content": segments_to_text(incoming_message)})
         return messages
 
     def _translate_batch(self, batch: List[SubtitleSegment]) -> Tuple[list]:
