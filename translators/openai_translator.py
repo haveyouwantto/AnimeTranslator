@@ -82,18 +82,38 @@ class OpenAITranslator(BaseTranslator):
 
     def _build_messages(self, incoming_message: List[SubtitleSegment]) -> List[dict]:
         """
-        构建对话消息，将系统提示、历史对话（按行单位，每一行包含user和assistant消息）以及当前用户消息组合起来。
+        构建对话消息，将系统提示、历史对话以及当前用户消息组合起来。
+        历史对话按 batch_size 组成 role pair，以便更好利用 LLM 缓存。
         """
         messages = [{"role": "system", "content": self.prompt}]
 
-        last_orig = self.orig_segments[-self.history_size :]
-        last_trans = self.trans_segments[-self.history_size :]
+        # 始终包含第一个示例片段作为第一个 role pair
+        if len(self.orig_segments) > 0:
+            messages.append({"role": "user", "content": segments_to_text([self.orig_segments[0]])})
+            messages.append({"role": "assistant", "content": segments_to_text([self.trans_segments[0]])})
 
-        if len(last_orig) > 0:
-            messages.append({"role": "user", "content": segments_to_text(last_orig)})
-            messages.append(
-                {"role": "assistant", "content": segments_to_text(last_trans)}
-            )
+        # 剩余的历史记录（排除示例）
+        h_orig = self.orig_segments[1:]
+        h_trans = self.trans_segments[1:]
+
+        if len(h_orig) > 0:
+            # 限制历史记录数量，并按 batch_size 对齐以保持前缀稳定
+            start = max(0, len(h_orig) - self.history_size)
+            # 向上取整到 batch_size 的倍数，确保不超出 history_size 且对齐
+            start = math.ceil(start / self.batch_size) * self.batch_size
+            
+            h_orig = h_orig[start:]
+            h_trans = h_trans[start:]
+
+            # 按 batch_size 分组并添加为 role pairs
+            for i in range(0, len(h_orig), self.batch_size):
+                chunk_orig = h_orig[i : i + self.batch_size]
+                chunk_trans = h_trans[i : i + self.batch_size]
+                if chunk_orig:
+                    messages.append({"role": "user", "content": segments_to_text(chunk_orig)})
+                    messages.append({"role": "assistant", "content": segments_to_text(chunk_trans)})
+
+        # 添加当前待翻译的消息
         messages.append({"role": "user", "content": segments_to_text(incoming_message)})
         return messages
 
