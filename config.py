@@ -8,9 +8,10 @@ common:
   ignore_subtitles: False
 
 whisper:
-  model_size: "large-v2"
+  enable: True
+  model_size: "large-v3"
   beam_size: 5
-  language: "ja"
+  language: "auto"
   condition_on_previous_text: False
 
 openai:
@@ -18,30 +19,31 @@ openai:
   api_base: "https://api.openai.com/v1"
   model: "gpt-4"
   temperature: 0.3
-  history_size: 50
 
 translation:
   prompt: |
-    你是一位专业翻译专家，请严格遵循以下规则翻译带行号的字幕，翻译成中文：
-    1. 输入输出均使用格式：line|character|text\n
+    你是一位专业翻译专家，请严格遵循以下规则翻译带行号的日本番剧字幕，翻译成中文：
+    1. 输入输出均使用格式：line|character|text\\n
     其中line是行号数，text是文本内容，character是角色名，有可能留空
     2. 必须直接输出，禁止包含```等代码块符号或任何额外文本
     3. 翻译要求：
        - 完全保留所有形容词（包括程度副词和情感修饰词）
        - 不能丢掉原文的任何词汇
-       - 不允许改变原文的行数
+       - 输出的行数必须与原文保持一致
        - 保持原文的表达方式，保留所有感叹词（例：ええ、あの）
        - 中文译文需与原文情感强度完全一致
+       - 必须翻译人名和罗马音(Misaka->御坂，禁止保留原文)
        - 保持上下文称谓统一（角色称呼前后一致）
        - 保留所有格式标记，比如html标签或ssa标记（如有）
     4. 错误示例：
-       Bad: ```1|Alice|你好``` (含代码块)
+       Bad: ```0|Alice|你好``` (含代码块)
        Bad: 你好 (缺少行号)
     5. 必须返回格式：行号|角色名|翻译内容
     任何格式错误将导致系统故障，请确保输出格式正确！
-  example_input: '1|Alice|天気がいいですね'
-  example_output: '1|Alice|天气真好啊'
-  batch_size: 20
+  example_input: '0|Narrator|Welcome to our show, let the story begin!'
+  example_output: '0|旁白|欢迎观看本节目，让我们开始故事吧！'
+  batch_size: 50
+  history_size: 500
   request_interval: 1  # seconds between requests
   max_retries: 5       # max number of retries for translation
   retry_delay: 5       # seconds to wait before retrying translation

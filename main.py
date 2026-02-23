@@ -1,19 +1,21 @@
 import sys
 import yaml
+import argparse
 from processor import SubtitleProcessor
 from pathlib import Path
 from config import create_default_config
 import glob
 import os
 
-default_config = os.path.join(os.path.dirname(
+# 默认配置文件路径在脚本目录下
+DEFAULT_CONFIG = os.path.join(os.path.dirname(
     os.path.abspath(__file__)), "config.yml")
 
 
-def load_config(config_path=default_config):
+def load_config(config_path=DEFAULT_CONFIG):
     """加载配置文件，不存在则创建"""
     if not Path(config_path).exists():
-        print("未找到配置文件")
+        print(f"未找到配置文件: {config_path}")
         if create_default_config(config_path):
             sys.exit(0)  # 创建成功后退出，让用户修改配置
         else:
@@ -28,13 +30,16 @@ def load_config(config_path=default_config):
 
 
 def main():
-    if len(sys.argv) <= 1:
-        print("Usage: python main.py audio_file.mp3 ...")
-        sys.exit(1)
+    parser = argparse.ArgumentParser(description="Anime Translator - 自动生成并翻译视频/音频字幕")
+    parser.add_argument("input_files", nargs="+", help="输入音频/视频文件（支持通配符 glob）")
+    parser.add_argument("-e", "--env", help="指定配置文件路径 (默认: 脚本目录下的 config.yml)", default=DEFAULT_CONFIG)
 
-    config = load_config()
+    args = parser.parse_args()
+
+    config = load_config(args.env)
     processor = SubtitleProcessor(config)
-    for patt in sys.argv[1:]:
+    
+    for patt in args.input_files:
         result = glob.glob(patt)
         if result:
             for file in result:
